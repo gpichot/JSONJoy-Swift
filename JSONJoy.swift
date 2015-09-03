@@ -44,7 +44,7 @@ public class JSONDecoder {
     public var bool: Bool {
         if let str = self.string {
             let lower = str.lowercaseString
-            if lower == "true" || lower.toInt() > 0 {
+            if lower == "true" || Int(lower) > 0 {
                 return true
             }
         } else if let num = self.integer {
@@ -99,7 +99,13 @@ public class JSONDecoder {
         var rawObject: AnyObject = raw
         if let data = rawObject as? NSData {
             var error: NSError?
-            var response: AnyObject? = NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions(), error: &error)
+            var response: AnyObject?
+            do {
+                response = try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions())
+            } catch let error1 as NSError {
+                error = error1
+                response = nil
+            }
             if error != nil || response == nil {
                 value = error
                 return
@@ -114,7 +120,7 @@ public class JSONDecoder {
             value = collect
         } else if let dict = rawObject as? NSDictionary {
             var collect = Dictionary<String,JSONDecoder>()
-            for (key,val: AnyObject) in dict {
+            for (key, val) in dict {
                 collect[key as! String] = JSONDecoder(val)
             }
             value = collect
@@ -156,14 +162,14 @@ public class JSONDecoder {
             for decoder in arr {
                 str += decoder.print() + ","
             }
-            str.removeAtIndex(advance(str.endIndex, -1))
+            str.removeAtIndex(str.endIndex.advancedBy(-1))
             return str + "]"
         } else if let dict = self.dictionary {
             var str = "{"
             for (key, decoder) in dict {
                 str += "\"\(key)\": \(decoder.print()),"
             }
-            str.removeAtIndex(advance(str.endIndex, -1))
+            str.removeAtIndex(str.endIndex.advancedBy(-1))
             return str + "}"
         }
         if value != nil {
@@ -182,3 +188,4 @@ public class JSONDecoder {
 public protocol JSONJoy {
     init(_ decoder: JSONDecoder)
 }
+
